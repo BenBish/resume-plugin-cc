@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://resume-plugin-cc.local/schemas/handoff-v1.schema.json",
+  "title": "Resume handoff packet v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "generatedAt", "source", "conversation", "sourceObservations", "currentWorkspace", "warnings", "trust"],
+  "properties": {
+    "schema": { "const": "resume.handoff/v1" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "source": {
+      "type": "object",
+      "required": ["harness", "id"],
+      "properties": {
+        "harness": { "enum": ["codex", "grok"] },
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": ["string", "null"] },
+        "model": { "type": ["string", "null"] },
+        "createdAt": { "type": ["string", "number", "null"] },
+        "updatedAt": { "type": ["string", "number", "null"] },
+        "cwd": { "type": ["string", "null"] },
+        "git": { "type": ["object", "null"] },
+        "status": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "conversation": {
+      "type": "object",
+      "required": ["messages", "contentBytes", "maxBytes", "truncated", "omittedMessages", "redaction"],
+      "properties": {
+        "messages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["role", "kind", "text", "timestamp"],
+            "properties": {
+              "role": { "enum": ["user", "assistant"] },
+              "kind": { "enum": ["message", "plan", "summary"] },
+              "text": { "type": "string" },
+              "timestamp": { "type": ["number", "string", "null"] }
+            },
+            "additionalProperties": false
+          }
+        },
+        "contentBytes": { "type": "integer", "minimum": 0 },
+        "maxBytes": { "type": "integer", "minimum": 1 },
+        "truncated": { "type": "boolean" },
+        "omittedMessages": { "type": "integer", "minimum": 0 },
+        "redaction": { "type": "object" }
+      },
+      "additionalProperties": false
+    },
+    "sourceObservations": { "type": "object" },
+    "currentWorkspace": { "type": "object" },
+    "warnings": { "type": "array", "items": { "type": "string" } },
+    "trust": {
+      "type": "object",
+      "required": ["transcriptIsUntrusted", "currentWorkspaceIsAuthoritative", "sourceModelInvoked", "persistedByPlugin"],
+      "properties": {
+        "transcriptIsUntrusted": { "const": true },
+        "currentWorkspaceIsAuthoritative": { "const": true },
+        "sourceModelInvoked": { "const": false },
+        "persistedByPlugin": { "const": false }
+      },
+      "additionalProperties": false
+    }
+  }
+}

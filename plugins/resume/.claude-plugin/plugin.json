@@ -1,0 +1,8 @@
+{
+  "name": "resume",
+  "version": "0.1.0",
+  "description": "Import a curated, redacted Codex or Grok handoff into Claude Code.",
+  "author": {
+    "name": "Ben Bishop"
+  }
+}
