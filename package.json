@@ -1,0 +1,19 @@
+{
+  "name": "resume-plugin-cc",
+  "version": "0.1.0",
+  "description": "Claude Code plugin for resuming Codex and Grok coding sessions.",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "test": "node --test --test-reporter=spec --test-concurrency=1 tests/cli.test.mjs tests/codex.test.mjs tests/grok.test.mjs tests/normalize.test.mjs",
+    "lint": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

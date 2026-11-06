@@ -1,0 +1,21 @@
+{
+  "name": "resume",
+  "owner": {
+    "name": "Ben Bishop"
+  },
+  "metadata": {
+    "description": "Resume Codex or Grok coding work inside Claude Code.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "resume",
+      "description": "Import a curated, redacted Codex or Grok handoff into Claude Code.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Ben Bishop"
+      },
+      "source": "./plugins/resume"
+    }
+  ]
+}
