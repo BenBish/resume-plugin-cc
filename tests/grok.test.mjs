@@ -12,6 +12,15 @@ test("parses Grok's human-readable session list defensively", () => {
   assert.match(sessions[0].title, /Fix parser/);
 });
 
+test("JSON session rows without an id are dropped, not stringified", () => {
+  const sessions = parseGrokSessionList(
+    JSON.stringify([{ title: "no id" }, { id: "123e4567-e89b-42d3-a456-426614174000", title: "has id" }]),
+    10,
+  );
+  assert.equal(sessions.length, 1);
+  assert.equal(sessions[0].id, "123e4567-e89b-42d3-a456-426614174000");
+});
+
 test("parses only user, assistant, and plan sections from a Grok export", () => {
   const result = parseGrokExport(`# Session
 Title: Test

@@ -6,6 +6,9 @@ import { fileURLToPath } from "node:url";
 
 export const RESUME_SCRIPT = fileURLToPath(new URL("../plugins/resume/scripts/resume.mjs", import.meta.url));
 
+/** Isolated HOME/XDG so git and harness fixtures never read the user's config. */
+export const TEST_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "resume-plugin-home-"));
+
 /** @param {string} prefix */
 export function mkTmpDir(prefix) {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -13,7 +16,11 @@ export function mkTmpDir(prefix) {
 
 /** @param {string} cwd @param {string[]} args */
 export function git(cwd, args) {
-  return execFileSync("git", args, { cwd, encoding: "utf8" });
+  return execFileSync("git", args, {
+    cwd,
+    encoding: "utf8",
+    env: { ...process.env, HOME: TEST_HOME, XDG_CONFIG_HOME: TEST_HOME },
+  });
 }
 
 export function initGitRepo() {
@@ -45,7 +52,7 @@ export function runResume(args, options) {
   try {
     const stdout = execFileSync(process.execPath, [RESUME_SCRIPT, ...args], {
       cwd: options.cwd,
-      env: { ...process.env, ...options.env },
+      env: { ...process.env, HOME: TEST_HOME, XDG_CONFIG_HOME: TEST_HOME, ...options.env },
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     });

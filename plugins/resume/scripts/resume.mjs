@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 
 import process from "node:process";
+import { pathToFileURL } from "node:url";
 import { listCodexSessions, readCodexSession } from "./lib/codex.mjs";
 import { listGrokSessions, readGrokSession } from "./lib/grok.mjs";
 import { resolveRepoRoot, canonicalPath } from "./lib/repo.mjs";
+import { redactText } from "./lib/redact.mjs";
 import { snapshotWorkspace } from "./lib/workspace.mjs";
 import { buildHandoff } from "./lib/normalize.mjs";
 import { commandVersion } from "./lib/process.mjs";
@@ -59,6 +61,16 @@ async function readOne(source, id) {
   throw new ResumeError("INVALID_SOURCE", `Unsupported source: ${source}`);
 }
 
+/**
+ * Sessions without a recorded cwd cannot be ruled out and are kept, matching
+ * the workspace-warning behavior in `list`.
+ * @param {any} session @param {string} cwd
+ */
+function sessionInRepo(session, cwd) {
+  if (!session.cwd) return true;
+  return canonicalPath(String(session.cwd)) === cwd;
+}
+
 /** @param {Record<string, string | boolean | undefined>} options */
 async function listCommand(options) {
   const cwd = resolveRepoRoot(typeof options.cwd === "string" ? options.cwd : process.cwd());
@@ -66,6 +78,7 @@ async function listCommand(options) {
   const source = typeof options.source === "string" ? options.source : null;
   if (source && !SOURCES.includes(source)) throw new ResumeError("INVALID_SOURCE", `Unsupported source: ${source}`);
   const selectedSources = source ? [source] : SOURCES;
+  const redact = options.redact !== false;
   /** @type {any[]} */
   const sessions = [];
   /** @type {Array<{source: string, code: string, message: string}>} */
@@ -74,10 +87,9 @@ async function listCommand(options) {
     try {
       const found = await listOne(selected, { cwd, limit });
       for (const session of found) {
-        if (session.cwd) {
-          const sessionCwd = canonicalPath(String(session.cwd));
-          if (sessionCwd !== cwd) continue;
-        } else {
+        if (!sessionInRepo(session, cwd)) continue;
+        if (session.title) session.title = redactText(String(session.title), redact).text;
+        if (!session.cwd) {
           session.workspaceWarning = "Source CLI did not expose a working directory; verify before continuing.";
         }
         sessions.push(session);
@@ -104,8 +116,8 @@ async function inspectCommand(options) {
   if (!id) throw new ResumeError("INVALID_ARGUMENTS", "inspect requires --id <session-id|latest>.");
   const cwd = resolveRepoRoot(typeof options.cwd === "string" ? options.cwd : process.cwd());
   if (id === "latest") {
-    const sessions = await listOne(source, { cwd, limit: 1 });
-    if (!sessions.length) throw new ResumeError("NO_SESSIONS", `No ${source} sessions were found.`);
+    const sessions = (await listOne(source, { cwd, limit: 25 })).filter((session) => sessionInRepo(session, cwd));
+    if (!sessions.length) throw new ResumeError("NO_SESSIONS", `No ${source} sessions were found for this repository.`);
     id = sessions[0].id;
   }
   const maxBytes = positiveInteger(options.maxBytes, DEFAULT_MAX_BYTES, 1024 * 1024);
@@ -146,7 +158,7 @@ export async function main(argv = process.argv.slice(2)) {
   throw new ResumeError("INVALID_ARGUMENTS", "Usage: resume.mjs <list|inspect|doctor> [options]");
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main()
     .then((result) => console.log(JSON.stringify(result, null, 2)))
     .catch((error) => {

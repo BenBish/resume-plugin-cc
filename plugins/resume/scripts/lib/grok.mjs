@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { runFile } from "./process.mjs";
 import { ResumeError } from "./errors.mjs";
 
@@ -17,16 +20,23 @@ export function parseGrokSessionList(output, limit) {
     const parsed = JSON.parse(clean);
     const rows = Array.isArray(parsed) ? parsed : parsed.sessions ?? parsed.data;
     if (Array.isArray(rows)) {
-      return rows.slice(0, limit).map((row) => ({
-        source: "grok",
-        id: String(row.id ?? row.sessionId ?? row.session_id),
-        title: row.title ?? row.summary ?? row.firstPrompt ?? "Untitled Grok session",
-        cwd: row.cwd ?? null,
-        createdAt: row.createdAt ?? row.created_at ?? null,
-        updatedAt: row.updatedAt ?? row.updated_at ?? null,
-        status: row.status ?? null,
-        workspaceWarning: null,
-      }));
+      return rows
+        .slice(0, limit)
+        .map((row) => {
+          const id = row.id ?? row.sessionId ?? row.session_id;
+          if (id === undefined || id === null) return null;
+          return {
+            source: "grok",
+            id: String(id),
+            title: row.title ?? row.summary ?? row.firstPrompt ?? "Untitled Grok session",
+            cwd: row.cwd ?? null,
+            createdAt: row.createdAt ?? row.created_at ?? null,
+            updatedAt: row.updatedAt ?? row.updated_at ?? null,
+            status: row.status ?? null,
+            workspaceWarning: null,
+          };
+        })
+        .filter(Boolean);
     }
   } catch {
     // Current Grok CLI emits a human table. Parse it defensively below.
@@ -112,13 +122,46 @@ export function parseGrokExport(markdown) {
   return { messages, metadata };
 }
 
-/** @param {{limit: number, command?: string}} options */
+/** @param {{limit: number, cwd?: string, command?: string}} options */
 export async function listGrokSessions(options) {
   const command = options.command ?? process.env.RESUME_GROK_BIN ?? "grok";
   const { stdout } = await runFile(command, ["sessions", "list", "--limit", String(options.limit)], {
     timeoutMs: 15_000,
+    cwd: options.cwd,
   });
   return parseGrokSessionList(stdout, options.limit);
+}
+
+/**
+ * Recover a session's recorded working directory from the on-disk session
+ * store. Grok groups session directories under ~/.grok/sessions/<encoded-cwd>/;
+ * `grok export` emits no workspace metadata, so this is the only source.
+ * @param {string} id
+ */
+function lookupGrokSessionCwd(id) {
+  try {
+    const root = path.join(process.env.GROK_HOME || path.join(os.homedir(), ".grok"), "sessions");
+    for (const group of fs.readdirSync(root)) {
+      try {
+        const dir = path.join(root, group);
+        if (!fs.statSync(dir).isDirectory()) continue;
+        if (!fs.readdirSync(dir).includes(id)) continue;
+        const cwdFile = path.join(dir, ".cwd");
+        if (fs.existsSync(cwdFile)) {
+          const recorded = fs.readFileSync(cwdFile, "utf8").trim();
+          if (recorded) return recorded;
+        }
+        const decoded = decodeURIComponent(group);
+        if (decoded.startsWith("/") || /^[A-Za-z]:[\\/]/.test(decoded)) return decoded;
+        return null;
+      } catch {
+        continue;
+      }
+    }
+  } catch {
+    // Sessions root unreadable; workspace identity stays unknown.
+  }
+  return null;
 }
 
 /** @param {{id: string, command?: string}} options */
@@ -134,7 +177,7 @@ export async function readGrokSession(options) {
       model: parsed.metadata.model,
       createdAt: parsed.metadata.createdAt,
       updatedAt: parsed.metadata.updatedAt,
-      cwd: parsed.metadata.cwd,
+      cwd: parsed.metadata.cwd ?? lookupGrokSessionCwd(options.id),
       git: null,
       status: null,
     },

@@ -22,15 +22,15 @@ function gitOptional(repo, args) {
 export function snapshotWorkspace(cwd = process.cwd()) {
   const root = resolveRepoRoot(cwd);
   const rawStatus = git(root, ["status", "--porcelain=v1", "-z", "--untracked-files=all"]);
-  const changedFiles = rawStatus
-    .split("\0")
-    .filter(Boolean)
-    .map((entry) => {
-      const status = entry.slice(0, 2);
-      const rawPath = entry.slice(3);
-      const path = rawPath.includes(" -> ") ? rawPath.split(" -> ").at(-1) ?? rawPath : rawPath;
-      return { status, path };
-    });
+  const records = rawStatus.split("\0").filter(Boolean);
+  /** @type {Array<{status: string, path: string}>} */
+  const changedFiles = [];
+  for (let index = 0; index < records.length; index += 1) {
+    const entry = records[index];
+    const status = entry.slice(0, 2);
+    changedFiles.push({ status, path: entry.slice(3) });
+    if (/[RC]/.test(status)) index += 1; // rename/copy record is followed by the source path
+  }
   const branch = gitOptional(root, ["symbolic-ref", "--short", "HEAD"]);
   const head = gitOptional(root, ["rev-parse", "HEAD"]);
   return {
@@ -52,6 +52,9 @@ export function snapshotWorkspace(cwd = process.cwd()) {
 export function compareWorkspace(source, current) {
   /** @type {string[]} */
   const warnings = [];
+  if (!source.cwd && !source.git?.branch && !source.git?.head) {
+    warnings.push("Source session does not expose a workspace identity; verify it belongs to this repository before continuing.");
+  }
   if (source.cwd && source.cwd !== current.root) {
     warnings.push(`Source cwd differs from current repository: ${source.cwd}`);
   }

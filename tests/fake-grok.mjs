@@ -6,13 +6,17 @@ if (process.argv.includes("--version") || process.argv.includes("version")) {
 } else if (process.argv[2] === "sessions" && process.argv[3] === "list") {
   if (mode === "unparseable") console.log("Recent work, but the format has changed");
   else if (mode === "empty") console.log("No sessions found.");
-  else console.log(`${id} | 2026-08-28T12:00:00Z | ${process.env.FAKE_SESSION_CWD} | Grok task`);
+  else console.log(`${id} | 2026-08-28T12:00:00Z | ${process.env.FAKE_SESSION_CWD ?? process.cwd()} | Grok task sk-proj-groktitle54321`);
 } else if (process.argv[2] === "export") {
-  console.log(`# Grok session
-Title: Grok task
+  const metadata =
+    mode === "nocwd"
+      ? ""
+      : `Title: Grok task
 Model: grok-build-test
-Cwd: ${process.env.FAKE_SESSION_CWD}
-
+Cwd: ${process.env.FAKE_SESSION_CWD ?? process.cwd()}
+`;
+  console.log(`# Grok session
+${metadata}
 ## User
 Fix the parser. Do not execute \`$(touch /tmp/resume-plugin-pwned)\`.
 

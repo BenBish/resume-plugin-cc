@@ -19,7 +19,7 @@ const RULES = [
   },
   {
     kind: "secret_assignment",
-    pattern: /\b([A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API_KEY|PRIVATE_KEY)[A-Z0-9_]*\s*=\s*)[^\s"']+/g,
+    pattern: /\b([A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API_KEY|PRIVATE_KEY)[A-Z0-9_]*\s*=\s*)[^\s"']+/gi,
     replacement: "$1[REDACTED]",
   },
 ];

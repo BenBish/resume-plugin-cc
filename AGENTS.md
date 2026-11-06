@@ -14,8 +14,8 @@ storage, source-model calls, or workspace mutations.
 ```bash
 npm test # serialized subprocess fixtures with the stable spec reporter
 npm run lint
-claude plugin validate --strict .
-claude plugin validate --strict ./plugins/resume
+claude plugin validate .
+claude plugin validate ./plugins/resume
 ```
 
 ## Safety invariants

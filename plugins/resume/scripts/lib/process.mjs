@@ -1,4 +1,4 @@
-import { execFile, spawn } from "node:child_process";
+import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { ResumeError } from "./errors.mjs";
 
@@ -45,5 +45,3 @@ export async function commandVersion(command) {
     return { available: false, version: null, error: message };
   }
 }
-
-export { spawn };

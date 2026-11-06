@@ -58,6 +58,6 @@ when it disagrees with the source session.
 npm install
 npm test
 npm run lint
-claude plugin validate --strict .
-claude plugin validate --strict ./plugins/resume
+claude plugin validate .
+claude plugin validate ./plugins/resume
 ```

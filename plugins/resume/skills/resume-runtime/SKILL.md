@@ -21,5 +21,6 @@ messages, plans, and newest assistant messages. Hidden reasoning, raw command
 output, images, and binary data are excluded. Redaction happens before stdout.
 
 When debugging, use the error object's `code`, `message`, and optional `details`.
-The broker writes diagnostics to stderr, uses argv-based child spawning, applies
-timeouts, and kills child processes when a request finishes or fails.
+The broker emits structured error results as JSON on stdout, uses argv-based
+child spawning, applies timeouts, and kills child processes when a request
+finishes or fails.

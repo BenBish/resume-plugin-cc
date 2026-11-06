@@ -11,8 +11,8 @@ const id = "01912345-6789-7abc-8def-0123456789ab";
 const thread = {
   id,
   sessionId: id,
-  preview: "Implement the handoff",
-  name: "Resume plugin",
+  preview: "Implement the handoff sk-proj-fakepreview999888",
+  name: null,
   modelProvider: "openai",
   createdAt: 1700000000,
   updatedAt: 1700000100,
@@ -30,7 +30,7 @@ const thread = {
         { type: "reasoning", summary: ["secret thoughts"], content: ["never expose"] },
         { type: "plan", text: "Implement adapters and tests." },
         { type: "commandExecution", command: "npm test", status: "completed", exitCode: 0 },
-        { type: "fileChange", changes: [{ path: "src/index.mjs", kind: "add", diff: "+secret" }] },
+        { type: "fileChange", changes: [{ path: "src/index.mjs", kind: { type: "add", move_path: null }, diff: "+secret" }] },
         { type: "agentMessage", text: "Adapters are implemented. token=sk-proj-abcdefghijklmnop" },
       ],
     },
@@ -47,7 +47,11 @@ if (mode === "malformed") {
     if (message.method === "initialize") {
       console.log(JSON.stringify({ id: message.id, result: { userAgent: "fake" } }));
     } else if (message.method === "thread/list") {
-      console.log(JSON.stringify({ id: message.id, result: { data: [{ ...thread, turns: [] }], nextCursor: null } }));
+      if (mode === "loopcursor") {
+        console.log(JSON.stringify({ id: message.id, result: { data: [], nextCursor: "same-cursor" } }));
+      } else {
+        console.log(JSON.stringify({ id: message.id, result: { data: [{ ...thread, turns: [] }], nextCursor: null } }));
+      }
     } else if (message.method === "thread/read") {
       console.log(JSON.stringify({ id: message.id, result: { thread } }));
     }

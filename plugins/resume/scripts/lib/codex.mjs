@@ -166,7 +166,8 @@ export function normalizeCodexThread(thread) {
         });
       } else if (item.type === "fileChange") {
         for (const change of item.changes ?? []) {
-          if (change?.path) fileChanges.push({ path: String(change.path), kind: String(change.kind ?? "update") });
+          const kind = typeof change?.kind === "string" ? change.kind : change?.kind?.type;
+          if (change?.path) fileChanges.push({ path: String(change.path), kind: String(kind ?? "update") });
         }
       }
     }
@@ -201,7 +202,9 @@ export async function listCodexSessions(options) {
     /** @type {any[]} */
     const sessions = [];
     let cursor = null;
-    while (sessions.length < options.limit) {
+    let pages = 0;
+    while (sessions.length < options.limit && pages < 20) {
+      pages += 1;
       const result = await client.request("thread/list", {
         cursor,
         limit: Math.min(50, options.limit - sessions.length),
@@ -210,9 +213,11 @@ export async function listCodexSessions(options) {
         sourceKinds: ["cli", "vscode", "exec", "appServer"],
         cwd: options.cwd,
       });
-      sessions.push(...(result?.data ?? []));
-      cursor = result?.nextCursor ?? null;
-      if (!cursor) break;
+      const page = result?.data ?? [];
+      sessions.push(...page);
+      const next = result?.nextCursor ?? null;
+      if (!next || next === cursor || page.length === 0) break;
+      cursor = next;
     }
     return sessions.slice(0, options.limit).map((thread) => ({
       source: "codex",
@@ -234,7 +239,21 @@ export async function readCodexSession(options) {
   const client = new CodexClient({ command: options.command });
   try {
     await client.initialize();
-    const result = await client.request("thread/read", { threadId: options.id, includeTurns: true });
+    let result;
+    try {
+      result = await client.request("thread/read", { threadId: options.id, includeTurns: true });
+    } catch (error) {
+      if (
+        error instanceof ResumeError &&
+        error.code === "CODEX_PROTOCOL_ERROR" &&
+        /not materialized|no rollout|not found|not loaded/i.test(error.message)
+      ) {
+        throw new ResumeError("SESSION_NOT_FOUND", `Codex session not found or not readable: ${options.id}`, {
+          cause: error.message,
+        });
+      }
+      throw error;
+    }
     if (!result?.thread) {
       throw new ResumeError("SESSION_NOT_FOUND", `Codex session not found: ${options.id}`);
     }

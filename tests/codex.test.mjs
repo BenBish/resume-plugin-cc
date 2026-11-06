@@ -17,9 +17,24 @@ test("Codex adapter lists and reads through App Server without reasoning content
     assert.doesNotMatch(JSON.stringify(raw), /secret thoughts|never expose|\+secret/);
     assert.deepEqual(raw.commands[0], { command: "npm test", status: "completed", exitCode: 0 });
     assert.equal(raw.fileChanges[0].path, "src/index.mjs");
+    assert.equal(raw.fileChanges[0].kind, "add");
   } finally {
     if (previous === undefined) delete process.env.FAKE_SESSION_CWD;
     else process.env.FAKE_SESSION_CWD = previous;
+  }
+});
+
+test("Codex adapter stops paginating on an empty page with a persistent cursor", async () => {
+  const repo = initGitRepo();
+  const bin = path.join(fakeBin("codex"), "codex");
+  const previous = process.env.FAKE_CODEX_MODE;
+  process.env.FAKE_CODEX_MODE = "loopcursor";
+  try {
+    const sessions = await listCodexSessions({ cwd: repo, limit: 10, command: bin });
+    assert.deepEqual(sessions, []);
+  } finally {
+    if (previous === undefined) delete process.env.FAKE_CODEX_MODE;
+    else process.env.FAKE_CODEX_MODE = previous;
   }
 });
 
