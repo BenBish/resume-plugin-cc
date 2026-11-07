@@ -134,6 +134,18 @@ test("the broker runs when the plugin path contains spaces", () => {
   assert.equal(JSON.parse(stdout).ok, true);
 });
 
+test("the broker runs when the plugin path traverses a symlink", () => {
+  const linkRoot = path.join(mkTmpDir("resume-plugin-link-"), "linked-plugin");
+  fs.symlinkSync(path.dirname(path.dirname(RESUME_SCRIPT)), linkRoot, "dir");
+  const repo = initGitRepo();
+  const stdout = execFileSync(process.execPath, [path.join(linkRoot, "scripts", "resume.mjs"), "doctor"], {
+    cwd: repo,
+    env: { ...process.env, HOME: TEST_HOME, XDG_CONFIG_HOME: TEST_HOME, ...harnessEnv(repo) },
+    encoding: "utf8",
+  });
+  assert.equal(JSON.parse(stdout).ok, true);
+});
+
 test("a Grok import without export metadata recovers workspace identity from the session store", () => {
   const repo = initGitRepo();
   const grokHome = mkTmpDir("resume-plugin-grok-home-");

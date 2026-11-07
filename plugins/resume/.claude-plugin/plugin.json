@@ -1,7 +1,7 @@
 {
   "name": "resume",
-  "version": "0.1.0",
-  "description": "Import a curated, redacted Codex or Grok handoff into Claude Code.",
+  "version": "0.2.0",
+  "description": "Import a curated, redacted Codex or Grok handoff into Claude Code or Devin.",
   "author": {
     "name": "Ben Bishop"
   }

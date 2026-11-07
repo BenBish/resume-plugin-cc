@@ -9,7 +9,7 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "test": "node --test --test-reporter=spec --test-concurrency=1 tests/cli.test.mjs tests/codex.test.mjs tests/grok.test.mjs tests/normalize.test.mjs",
+    "test": "node --test --test-reporter=spec --test-concurrency=1 tests/cli.test.mjs tests/codex.test.mjs tests/grok.test.mjs tests/normalize.test.mjs tests/packaging.test.mjs",
     "lint": "tsc -p tsconfig.json"
   },
   "devDependencies": {
