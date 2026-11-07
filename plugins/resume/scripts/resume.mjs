@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import fs from "node:fs";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
 import { listCodexSessions, readCodexSession } from "./lib/codex.mjs";
@@ -158,7 +159,17 @@ export async function main(argv = process.argv.slice(2)) {
   throw new ResumeError("INVALID_ARGUMENTS", "Usage: resume.mjs <list|inspect|doctor> [options]");
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+/** Plugin installs may reach this file through a symlinked directory. */
+function invokedAsScript() {
+  if (!process.argv[1]) return false;
+  try {
+    return import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href;
+  } catch {
+    return false;
+  }
+}
+
+if (invokedAsScript()) {
   main()
     .then((result) => console.log(JSON.stringify(result, null, 2)))
     .catch((error) => {
