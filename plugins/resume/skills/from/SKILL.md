@@ -21,10 +21,11 @@ The broker entry point is `<plugin-root>/scripts/resume.mjs`. Resolve
 - Claude Code: `${CLAUDE_PLUGIN_ROOT}` expands to this plugin's install
   directory when this prompt loads.
 - Devin and other hosts: this file lives at
-  `<plugin-root>/skills/from/SKILL.md`, so `<plugin-root>` is the directory two
-  levels above this file. The skill's base directory is shown in the session's
-  skill listing and by `devin skills show resume:from`. Never guess or
-  hardcode a cache path.
+  `<plugin-root>/skills/from/SKILL.md`, so `<plugin-root>` is the parent
+  directory of the `skills/` directory containing this file — two directories
+  up from this skill's base directory. The skill's base directory is shown in
+  the session's skill listing and by `devin skills show resume:from`. Never
+  guess or hardcode a cache path.
 
 ## Workflow
 
